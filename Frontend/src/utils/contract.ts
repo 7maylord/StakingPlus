@@ -3,7 +3,7 @@ import STAKING_CONTRACT_ABI from "../abi/StakingContract.json"
 import TOKEN_CONTRACT_ABI from "../abi/TokenContract.json"
 
 const STAKING_CONTRACT_ADDRESS = import.meta.env.VITE_STAKING_CONTRACT_ADDRESS as string;
-const TOKEN_CONTRACT_ADDRESS = import.meta.env.VITE_token_CONTRACT_ADDRESS as string;
+const TOKEN_CONTRACT_ADDRESS = import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS as string;
 
 export const getStakingContract = (signer: ethers.Signer) => {
   return new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, signer);
@@ -35,7 +35,6 @@ export const stake = async (signer: ethers.Signer, amount: bigint) => {
   const contract = getStakingContract(signer);
   const tx = await contract.stake(amount);
   await tx.wait();
-  return;
 };
 
 export const withdraw = async (signer: ethers.Signer, amount: bigint) => {

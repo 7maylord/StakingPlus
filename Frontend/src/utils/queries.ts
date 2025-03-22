@@ -21,7 +21,7 @@ export const GET_USER_DATA = gql`
       totalStaked
       currentRewardRate
       totalRewardsDistributed
-    #   minLockDuration
+      minLockDuration
     }
   }
 `;

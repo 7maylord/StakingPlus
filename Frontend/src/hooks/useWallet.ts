@@ -175,44 +175,7 @@ export const useWallet = () => {
     }
   };
 
-  const sendTransaction = async (recipient: string, amount: string) => {
-    if (!window.ethereum || !walletAddress) {
-      setError("Wallet not connected");
-      return;
-    }
-    
-    if (!recipient || !amount) {
-      setError("Please provide both recipient address and amount");
-      return;
-    }
-    
-    try {
-      // Using eth_sendTransaction directly (EIP-1193 way)
-      const transactionParameters = {
-        from: walletAddress,
-        to: recipient,
-        value: "0x" + (Number(ethers.parseEther(amount))).toString(16),
-      };
-      
-      const txHash = await window.ethereum.request({
-        method: "eth_sendTransaction",
-        params: [transactionParameters]
-      });
-      
-      alert(`Transaction submitted! Hash: ${txHash}`);
-      
-      // Update balance after transaction
-      if (walletAddress) {
-        setTimeout(() => updateBalance(walletAddress), 1000);
-      }
-    } catch (error: any) {
-      if (error.code === 4001) {
-        setError("Transaction rejected by user");
-      } else {
-        setError(`Transaction failed: ${error.message}`);
-      }
-    }
-  };
+  
 
   // Setup and cleanup event listeners
   const setupProviderListeners = useCallback(() => {
@@ -260,7 +223,6 @@ export const useWallet = () => {
     connectWallet,
     disconnectWallet,
     switchNetwork,
-    sendTransaction,
     setupProviderListeners,
     removeProviderListeners
   };
