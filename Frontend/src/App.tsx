@@ -3,14 +3,24 @@ import { useWallet } from "./hooks/useWallet";
 import { GET_USER_DATA } from "./utils/queries";
 import { useQuery } from "@apollo/client";
 import { ethers } from "ethers";
-import { stake, withdraw, claimRewards, emergencyWithdraw, checkAllowance, approveTokens, checkContractState } from "./utils/contract";
+import {
+  stake,
+  withdraw,
+  claimRewards,
+  emergencyWithdraw,
+  checkAllowance,
+  approveTokens,
+  checkContractState,
+} from "./utils/contract";
 import { ToastContainer, toast } from "react-toastify";
-import StakingStats from "./components/StakingStats"
+import StakingStats from "./components/StakingStats";
 
 interface Stake {
   id: string;
   amount: string;
   unlockTime: number;
+  timestamp: string;
+  status: string;
 }
 
 function App() {
@@ -30,108 +40,113 @@ function App() {
   //console.log("Data:", data); // Debug the data
   //console.log("Loading:", loading); // Debug the loading state
   //console.log("Error:", error); // Debug any errors
-  
-  const STAKING_CONTRACT_ADDRESS = import.meta.env.VITE_STAKING_CONTRACT_ADDRESS as string;
+
+  const STAKING_CONTRACT_ADDRESS = import.meta.env
+    .VITE_STAKING_CONTRACT_ADDRESS as string;
 
   const handleStake = async () => {
     if (!signer || !amountD) {
       toast.error("Please enter an amount to stake");
       return;
     }
-    
+
     setIsStaking(true);
     const toastId = toast.loading("Preparing to stake tokens...");
-    
+
     try {
       const parsedAmount = ethers.parseEther(amountD);
       const owner = await signer.getAddress();
-      
+
       // Using provider from signer for read operation
       const provider = signer.provider;
-      
-      toast.update(toastId, { 
-        render: "Checking allowance...", 
-        type: "info", 
-        isLoading: true 
+
+      toast.update(toastId, {
+        render: "Checking allowance...",
+        type: "info",
+        isLoading: true,
       });
-      
-      const allowance = await checkAllowance(provider, owner, STAKING_CONTRACT_ADDRESS);
-      
+
+      const allowance = await checkAllowance(
+        provider,
+        owner,
+        STAKING_CONTRACT_ADDRESS
+      );
+
       if (allowance < parsedAmount) {
-        toast.update(toastId, { 
-          render: "Approving tokens...", 
-          type: "info", 
-          isLoading: true 
+        toast.update(toastId, {
+          render: "Approving tokens...",
+          type: "info",
+          isLoading: true,
         });
-        
+
         await approveTokens(signer, STAKING_CONTRACT_ADDRESS, parsedAmount);
-        toast.update(toastId, { 
-          render: "Tokens approved successfully!", 
-          type: "success", 
+        toast.update(toastId, {
+          render: "Tokens approved successfully!",
+          type: "success",
           isLoading: false,
-          autoClose: 3000
+          autoClose: 3000,
         });
-        
+
         // Create a new toast for staking process
         const stakeToastId = toast.loading("Preparing to stake tokens...");
-        
+
         // Check contract state
         const isPaused = await checkContractState(signer);
         if (isPaused) {
-          toast.update(stakeToastId, { 
-            render: "Contract is currently paused. Please try again later.", 
-            type: "error", 
+          toast.update(stakeToastId, {
+            render: "Contract is currently paused. Please try again later.",
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
           setIsStaking(false);
           return;
         }
-        
-        toast.update(stakeToastId, { 
-          render: "Staking tokens...", 
-          type: "info", 
-          isLoading: true 
+
+        toast.update(stakeToastId, {
+          render: "Staking tokens...",
+          type: "info",
+          isLoading: true,
         });
-        
+
         await stake(signer, parsedAmount);
-        toast.update(stakeToastId, { 
-          render: `Successfully staked ${amountD} tokens!`, 
-          type: "success", 
+        toast.update(stakeToastId, {
+          render: `Successfully staked ${amountD} tokens!`,
+          type: "success",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
-        
+
         setAmountD("");
         refetch(); // Refresh user data
       } else {
         // Check contract state
         const isPaused = await checkContractState(signer);
         if (isPaused) {
-          toast.update(toastId, { 
-            render: "Contract is currently paused. Please try again later.", 
-            type: "error", 
+          toast.update(toastId, {
+            render: "Contract is currently paused. Please try again later.",
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
           setIsStaking(false);
           return;
         }
-        
-        toast.update(toastId, { 
-          render: "Staking tokens...", 
-          type: "info", 
-          isLoading: true 
+
+        toast.update(toastId, {
+          render: "Staking tokens...",
+          type: "info",
+          isLoading: true,
         });
-        
+
         await stake(signer, parsedAmount);
-        toast.update(toastId, { 
-          render: `Successfully staked ${amountD} tokens!`, 
-          type: "success", 
+        toast.update(toastId, {
+          render: `Successfully staked ${amountD} tokens!`,
+          type: "success",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
-        
+
         setAmountD("");
         refetch(); // Refresh user data
       }
@@ -139,26 +154,28 @@ function App() {
       if (error instanceof Error && (error as any).data) {
         try {
           const decodedError = ethers.toUtf8String((error as any).data);
-          toast.update(toastId, { 
-            render: `Staking failed: ${decodedError}`, 
-            type: "error", 
+          toast.update(toastId, {
+            render: `Staking failed: ${decodedError}`,
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         } catch (e) {
-          toast.update(toastId, { 
-            render: "Staking failed: Contract error", 
-            type: "error", 
+          toast.update(toastId, {
+            render: "Staking failed: Contract error",
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         }
       } else {
-        toast.update(toastId, { 
-          render: `Staking failed: ${error instanceof Error ? error.message : "Unknown error"}`, 
-          type: "error", 
+        toast.update(toastId, {
+          render: `Staking failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          type: "error",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
       }
       console.error("Staking failed:", error);
@@ -172,67 +189,69 @@ function App() {
       toast.error("Please enter an amount to withdraw");
       return;
     }
-    
+
     setIsWithdrawing(true);
     const toastId = toast.loading("Preparing to withdraw tokens...");
-    
+
     try {
       const parsedAmount = ethers.parseEther(amountW);
-      
+
       // Check contract state
       const isPaused = await checkContractState(signer);
       if (isPaused) {
-        toast.update(toastId, { 
-          render: "Contract is currently paused. Please try again later.", 
-          type: "error", 
+        toast.update(toastId, {
+          render: "Contract is currently paused. Please try again later.",
+          type: "error",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
         setIsWithdrawing(false);
         return;
       }
-      
-      toast.update(toastId, { 
-        render: "Withdrawing tokens...", 
-        type: "info", 
+
+      toast.update(toastId, {
+        render: "Withdrawing tokens...",
+        type: "info",
         isLoading: true,
-        autoClose: 1000
+        autoClose: 1000,
       });
-      
+
       await withdraw(signer, parsedAmount);
-      toast.update(toastId, { 
-        render: `Successfully withdrew ${amountW} tokens!`, 
-        type: "success", 
+      toast.update(toastId, {
+        render: `Successfully withdrew ${amountW} tokens!`,
+        type: "success",
         isLoading: false,
-        autoClose: 5000
+        autoClose: 5000,
       });
-      
+
       setAmountW("");
       refetch(); // Refresh user data
     } catch (error) {
       if (error instanceof Error && (error as any).data) {
         try {
           const decodedError = ethers.toUtf8String((error as any).data);
-          toast.update(toastId, { 
-            render: `Withdrawal failed: ${decodedError}`, 
-            type: "error", 
+          toast.update(toastId, {
+            render: `Withdrawal failed: ${decodedError}`,
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         } catch (e) {
-          toast.update(toastId, { 
-            render: "Withdrawal failed: Contract error", 
-            type: "error", 
+          toast.update(toastId, {
+            render: "Withdrawal failed: Contract error",
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         }
       } else {
-        toast.update(toastId, { 
-          render: `Withdrawal failed: ${error instanceof Error ? error.message : "Unknown error"}`, 
-          type: "error", 
+        toast.update(toastId, {
+          render: `Withdrawal failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          type: "error",
           isLoading: false,
-          autoClose: 100
+          autoClose: 100,
         });
       }
       console.error("Withdrawal failed:", error);
@@ -246,63 +265,65 @@ function App() {
       toast.error("Wallet not connected");
       return;
     }
-    
+
     setIsClaimingRewards(true);
     const toastId = toast.loading("Preparing to claim rewards...");
-    
+
     try {
       // Check contract state
       const isPaused = await checkContractState(signer);
       if (isPaused) {
-        toast.update(toastId, { 
-          render: "Contract is currently paused. Please try again later.", 
-          type: "error", 
+        toast.update(toastId, {
+          render: "Contract is currently paused. Please try again later.",
+          type: "error",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
         setIsClaimingRewards(false);
         return;
       }
-      
-      toast.update(toastId, { 
-        render: "Claiming rewards...", 
-        type: "info", 
-        isLoading: true 
+
+      toast.update(toastId, {
+        render: "Claiming rewards...",
+        type: "info",
+        isLoading: true,
       });
-      
+
       await claimRewards(signer);
-      toast.update(toastId, { 
-        render: "Successfully claimed rewards!", 
-        type: "success", 
+      toast.update(toastId, {
+        render: "Successfully claimed rewards!",
+        type: "success",
         isLoading: false,
-        autoClose: 5000
+        autoClose: 5000,
       });
-      
+
       refetch(); // Refresh user data
     } catch (error) {
       if (error instanceof Error && (error as any).data) {
         try {
           const decodedError = ethers.toUtf8String((error as any).data);
-          toast.update(toastId, { 
-            render: `Claiming rewards failed: ${decodedError}`, 
-            type: "error", 
+          toast.update(toastId, {
+            render: `Claiming rewards failed: ${decodedError}`,
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         } catch (e) {
-          toast.update(toastId, { 
-            render: "Claiming rewards failed: Contract error", 
-            type: "error", 
+          toast.update(toastId, {
+            render: "Claiming rewards failed: Contract error",
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         }
       } else {
-        toast.update(toastId, { 
-          render: `Claiming rewards failed: ${error instanceof Error ? error.message : "Unknown error"}`, 
-          type: "error", 
+        toast.update(toastId, {
+          render: `Claiming rewards failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          type: "error",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
       }
       console.error("Claiming rewards failed:", error);
@@ -316,55 +337,59 @@ function App() {
       toast.error("Wallet not connected");
       return;
     }
-    
+
     // Confirm with user before emergency withdrawal
-    if (!window.confirm("Are you sure you want to perform an emergency withdrawal? This will forfeit any pending rewards.")) {
-      return;
-    }
-    
+    toast.warn("You are about to perform an emergency withdrawal. This will forfeit any pending rewards.", {
+      autoClose: 5000, 
+      closeOnClick: true, 
+      pauseOnHover: true,
+    })
+
     setIsEmergencyWithdrawing(true);
     const toastId = toast.loading("Preparing emergency withdrawal...");
-    
+
     try {
-      toast.update(toastId, { 
-        render: "Processing emergency withdrawal...", 
-        type: "info", 
-        isLoading: true 
+      toast.update(toastId, {
+        render: "Processing emergency withdrawal...",
+        type: "info",
+        isLoading: true,
       });
-      
+
       await emergencyWithdraw(signer);
-      toast.update(toastId, { 
-        render: "Emergency withdrawal successful!", 
-        type: "success", 
+      toast.update(toastId, {
+        render: "Emergency withdrawal successful!",
+        type: "success",
         isLoading: false,
-        autoClose: 5000
+        autoClose: 5000,
       });
-      
+
       refetch(); // Refresh user data
     } catch (error) {
       if (error instanceof Error && (error as any).data) {
         try {
           const decodedError = ethers.toUtf8String((error as any).data);
-          toast.update(toastId, { 
-            render: `Emergency withdrawal failed: ${decodedError}`, 
-            type: "error", 
+          toast.update(toastId, {
+            render: `Emergency withdrawal failed: ${decodedError}`,
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         } catch (e) {
-          toast.update(toastId, { 
-            render: "Emergency withdrawal failed: Contract error", 
-            type: "error", 
+          toast.update(toastId, {
+            render: "Emergency withdrawal failed: Contract error",
+            type: "error",
             isLoading: false,
-            autoClose: 5000
+            autoClose: 5000,
           });
         }
       } else {
-        toast.update(toastId, { 
-          render: `Emergency withdrawal failed: ${error instanceof Error ? error.message : "Unknown error"}`, 
-          type: "error", 
+        toast.update(toastId, {
+          render: `Emergency withdrawal failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          type: "error",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
       }
       console.error("Emergency withdrawal failed:", error);
@@ -377,47 +402,54 @@ function App() {
     const toastId = toast.loading("Connecting wallet...");
     try {
       await connectWallet();
-      toast.update(toastId, { 
-        render: "Wallet connected successfully!", 
-        type: "success", 
+      toast.update(toastId, {
+        render: "Wallet connected successfully!",
+        type: "success",
         isLoading: false,
-        autoClose: 3000
+        autoClose: 3000,
       });
     } catch (error) {
-      toast.update(toastId, { 
-        render: `Failed to connect wallet: ${error instanceof Error ? error.message : "Unknown error"}`, 
-        type: "error", 
+      toast.update(toastId, {
+        render: `Failed to connect wallet: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        type: "error",
         isLoading: false,
-        autoClose: 5000
+        autoClose: 5000,
       });
     }
   };
 
-  if (loading) return (
-    <div className="p-4">
-      <ToastContainer position="top-right" />
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-        <p className="ml-4 text-lg">Loading staking data...</p>
+  if (loading)
+    return (
+      <div className="p-4">
+        <ToastContainer position="top-right" />
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="ml-4 text-lg">Loading staking data...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
 
-  if (error) return (
-    <div className="p-4">
-      <ToastContainer position="top-right" />
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong className="font-bold">Error: </strong>
-        <span className="block sm:inline">{error.message}</span>
+  if (error)
+    return (
+      <div className="p-4">
+        <ToastContainer position="top-right" />
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+          role="alert"
+        >
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error.message}</span>
+        </div>
+        <button
+          onClick={() => refetch()}
+          className="mt-4 bg-blue-500 text-white p-2 rounded"
+        >
+          Try Again
+        </button>
       </div>
-      <button
-        onClick={() => refetch()}
-        className="mt-4 bg-blue-500 text-white p-2 rounded"
-      >
-        Try Again
-      </button>
-    </div>
-  );
+    );
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -434,16 +466,29 @@ function App() {
       ) : (
         <div>
           <div className="bg-gray-500 p-4 rounded-lg mb-6">
-            <p className="font-medium">Connected Wallet: <span className="text-blue-600">{walletAddress}</span></p>
+            <p className="font-medium">
+              Connected Wallet:{" "}
+              <span className="text-blue-600">{walletAddress}</span>
+            </p>
             {data?.user && (
               <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white p-3 rounded shadow-sm">
                   <p className="text-gray-500 text-sm">Total Staked</p>
-                  <p className="text-lg text-black font-bold">{data.user.stakedAmount ? ethers.formatEther(data.user.stakedAmount) : '0'} STK</p>
+                  <p className="text-lg text-black font-bold">
+                    {data.user.stakedAmount
+                      ? ethers.formatEther(data.user.stakedAmount)
+                      : "0"}{" "}
+                    STK
+                  </p>
                 </div>
                 <div className="bg-white p-3 rounded shadow-sm">
                   <p className="text-gray-500 text-sm">Pending Rewards</p>
-                  <p className="text-lg text-black font-bold">{data.user.pendingRewards ? ethers.formatEther(data.user.pendingRewards) : '0'} STK</p>
+                  <p className="text-lg text-black font-bold">
+                    {data.user.pendingRewards
+                      ? ethers.formatEther(data.user.pendingRewards)
+                      : "0"}{" "}
+                    STK
+                  </p>
                 </div>
               </div>
             )}
@@ -468,13 +513,31 @@ function App() {
                 >
                   {isStaking ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Processing...
                     </>
-                  ) : "Stake Tokens"}
+                  ) : (
+                    "Stake Tokens"
+                  )}
                 </button>
               </div>
             </div>
@@ -497,13 +560,31 @@ function App() {
                 >
                   {isWithdrawing ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Processing...
                     </>
-                  ) : "Withdraw Tokens"}
+                  ) : (
+                    "Withdraw Tokens"
+                  )}
                 </button>
               </div>
             </div>
@@ -519,13 +600,31 @@ function App() {
               >
                 {isClaimingRewards ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Claiming...
                   </>
-                ) : "Claim Rewards"}
+                ) : (
+                  "Claim Rewards"
+                )}
               </button>
             </div>
 
@@ -538,21 +637,41 @@ function App() {
               >
                 {isEmergencyWithdrawing ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Processing...
                   </>
-                ) : "Emergency Withdraw"}
+                ) : (
+                  "Emergency Withdraw"
+                )}
               </button>
-              <p className="text-xs text-red-500 mt-2">⚠️ Warning: This will forfeit any pending rewards.</p>
+              <p className="text-xs text-red-500 mt-2">
+                ⚠️ Warning: This will forfeit any pending rewards.
+              </p>
             </div>
           </div>
           <div className="mt-6">
-          {data?.protocol && data.user && (
-            <StakingStats user={data.user} protocol={data.protocol} />
-          )}
+            {data?.protocol && data.user && (
+              <StakingStats user={data.user} protocol={data.protocol} />
+            )}
           </div>
           <div className="mt-6">
             <h2 className="text-xl font-bold mb-3">Your Stakes</h2>
@@ -562,31 +681,72 @@ function App() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Staked On</th>
-                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Unlock Time</th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          ID
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Amount
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Staked On
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Unlock Time
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Status
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {data.user.stakes.map((stake: Stake) => (
                         <tr key={stake.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <a
-                                href={`https://sepolia.etherscan.io/tx/${stake.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-500 hover:underline"
-                              >
-                                {stake.id.slice(0, 8)}...
-                              </a>
-                            </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm font-medium">{ethers.formatEther(stake.amount)} STK</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(parseInt(stake.timestamp) * 1000).toLocaleString()}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                            <a
+                              href={`https://sepolia.etherscan.io/tx/${stake.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                            >
+                              {stake.id.slice(0, 8)}...
+                            </a>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm text-center font-medium">
+                            {ethers.formatEther(stake.amount)} STK
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {new Date(
+                              parseInt(stake.timestamp) * 1000
+                            ).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                             {new Date(stake.unlockTime * 1000).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {stake.status === "active" ? (
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                                Active
+                              </span>
+                            ) : (
+                              <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">
+                                Withdrawn
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -596,7 +756,9 @@ function App() {
               </div>
             ) : (
               <div className="bg-white p-6 rounded-lg shadow text-center">
-                <p className="text-gray-500">No stakes found. Start staking to see your positions here.</p>
+                <p className="text-gray-500">
+                  No stakes found. Start staking to see your positions here.
+                </p>
               </div>
             )}
           </div>

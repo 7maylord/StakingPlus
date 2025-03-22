@@ -10,6 +10,7 @@ export const GET_USER_DATA = gql`
         amount
         timestamp
         unlockTime
+        status
       }
       rewardsClaimed {
         id
