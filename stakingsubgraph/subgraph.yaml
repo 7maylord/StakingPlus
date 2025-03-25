@@ -1,0 +1,52 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: StakingContract
+    network: sepolia
+    source:
+      address: "0xE574459B88a47b0B223468e677920C62E77A56AC"
+      abi: StakingContract
+      startBlock: 7955247
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Protocol
+        - StakePosition
+        - Withdrawal
+        - RewardClaimed
+        - EmergencyWithdraw
+        - RewardRateUpdated
+        - StakingInitialized
+        - StakingPaused
+        - StakingUnpaused
+        - TokenRecovered
+      abis:
+        - name: StakingContract
+          file: ./abis/StakingContract.json
+      eventHandlers:
+        - event: EmergencyWithdrawn(indexed address,uint256,uint256,uint256,uint256)
+          handler: handleEmergencyWithdrawn
+        - event: RewardRateUpdated(uint256,uint256,uint256,uint256)
+          handler: handleRewardRateUpdated
+        - event: RewardsClaimed(indexed address,uint256,uint256,uint256,uint256)
+          handler: handleRewardsClaimed
+        - event: Staked(indexed address,uint256,uint256,uint256,uint256)
+          handler: handleStaked
+        - event: StakingInitialized(indexed address,uint256,uint256)
+          handler: handleStakingInitialized
+        - event: StakingPaused(uint256)
+          handler: handleStakingPaused
+        - event: StakingUnpaused(uint256)
+          handler: handleStakingUnpaused
+        - event: TokenRecovered(indexed address,uint256,uint256)
+          handler: handleTokenRecovered
+        - event: Withdrawn(indexed address,uint256,uint256,uint256,uint256,uint256)
+          handler: handleWithdrawn
+      file: ./src/staking-contract.ts

@@ -1,20 +1,5 @@
-node_modules
 .env
-
-# Hardhat files
-/cache
-/artifacts
-
-# TypeChain files
-/typechain
-/typechain-types
-
-# solidity-coverage files
-/coverage
-/coverage.json
-
-# Hardhat Ignition default folder for deployments against a local node
-ignition/deployments/chain-31337
+node_modules
 
 # Graph CLI generated artifacts
 build/
@@ -44,6 +29,11 @@ yarn-error.log*
 coverage
 coverage.json
 
+# Typechain
+typechain
+typechain-types
 
 # Hardhat files
 cache
+
+

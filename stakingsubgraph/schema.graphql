@@ -1,0 +1,90 @@
+type User @entity {
+  id: ID! # User address
+  stakedAmount: BigInt!
+  pendingRewards: BigInt!
+  lastStakeTimestamp: BigInt!
+  stakes: [StakePosition!]! @derivedFrom(field: "user")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "user")
+  rewardsClaimed: [RewardClaimed!]! @derivedFrom(field: "user")
+}
+
+type Protocol @entity {
+  id: ID! # Constant ID like "1"
+  totalStaked: BigInt!
+  currentRewardRate: BigInt!
+  totalRewardsDistributed: BigInt!
+  minLockDuration: BigInt!
+}
+
+type StakePosition @entity(immutable: true) {
+  id: ID! # Transaction hash
+  user: User!
+  amount: BigInt!
+  timestamp: BigInt!
+  unlockTime: BigInt!
+  totalStaked: BigInt! # Snapshot of totalStaked at the time of staking
+  currentRewardRate: BigInt! # Snapshot of currentRewardRate at the time of staking
+  transactionHash: Bytes!
+  status: String! # "Active" or "Withdrawn"
+}
+
+type Withdrawal @entity(immutable: true) {
+  id: ID! # Transaction hash
+  user: User!
+  amount: BigInt!
+  penalty: BigInt # Only for emergency withdrawals
+  timestamp: BigInt!
+  totalStaked: BigInt! # Snapshot of totalStaked at the time of withdrawal
+  currentRewardRate: BigInt! # Snapshot of currentRewardRate at the time of withdrawal
+}
+
+type RewardClaimed @entity(immutable: true) {
+  id: ID! # Transaction hash
+  user: User!
+  amount: BigInt!
+  timestamp: BigInt!
+  totalStaked: BigInt! # Snapshot of totalStaked at the time of claiming
+}
+
+type EmergencyWithdrawn @entity(immutable: true) {
+  id: ID! # Transaction hash
+  user: User!
+  amount: BigInt!
+  penalty: BigInt!
+  timestamp: BigInt!
+  totalStaked: BigInt! # Snapshot of totalStaked at the time of emergency withdrawal
+}
+
+type RewardRateUpdated @entity(immutable: true) {
+  id: ID! # Transaction hash
+  oldRate: BigInt!
+  newRate: BigInt!
+  timestamp: BigInt!
+  totalStaked: BigInt! # Snapshot of totalStaked at the time of update
+}
+
+type StakingInitialized @entity(immutable: true) {
+  id: ID! # Transaction hash
+  stakingToken: Bytes! # Address of the staking token
+  initialRewardRate: BigInt!
+  timestamp: BigInt!
+}
+
+type StakingPaused @entity(immutable: true) {
+  id: ID! # Transaction hash
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type StakingUnpaused @entity(immutable: true) {
+  id: ID! # Transaction hash
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokenRecovered @entity(immutable: true) {
+  id: ID! # Transaction hash
+  token: Bytes! # Address of the recovered token
+  amount: BigInt!
+  timestamp: BigInt!
+}
